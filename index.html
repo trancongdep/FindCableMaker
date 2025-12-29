@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Tìm Cột Điện - v1.0</title>
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AR Cột Điện">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <title>AR Tìm Cột Điện - v1.2</title>
     <style>
         body, html {
             margin: 0;
@@ -29,7 +36,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.2s ease-out; /* Mượt mà khi zoom */
+            transition: transform 0.2s ease-out;
         }
 
         /* Canvas vẽ đồ họa AR */
@@ -50,7 +57,7 @@
             width: 100%;
             height: 100%;
             z-index: 3;
-            pointer-events: none; /* Để thao tác chạm xuyên qua canvas */
+            pointer-events: none;
         }
 
         /* Nút Zoom */
@@ -98,14 +105,14 @@
             max-width: 80%;
         }
 
-        /* Màn hình chờ / Nút bắt đầu */
+        /* Màn hình chờ / Nhập liệu */
         #start-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
             z-index: 10;
             display: flex;
             flex-direction: column;
@@ -113,6 +120,31 @@
             justify-content: center;
             color: white;
             pointer-events: auto;
+            overflow-y: auto; /* Cho phép cuộn nếu màn hình nhỏ */
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #0f0;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background: #222;
+            color: #fff;
+            font-size: 16px;
+            box-sizing: border-box; /* Đảm bảo padding không làm vỡ layout */
         }
 
         #btn-start {
@@ -123,20 +155,48 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 20px;
+            margin-top: 10px;
             font-weight: bold;
+            width: 80%;
+            max-width: 300px;
+        }
+        
+        #install-btn {
+            display: none;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <h2>Ứng Dụng Tìm Cột Điện</h2>
-        <p>Phiên bản: 1.0</p>
-        <p style="text-align: center; font-size: 14px; color: #ccc; max-width: 80%;">
-            Cần cấp quyền Camera và Vị trí.<br>Hãy đứng tại chỗ và hiệu chỉnh la bàn.
-        </p>
-        <button id="btn-start">Bắt Đầu & Cấp Quyền</button>
+        <h2 style="margin-bottom: 20px;">Nhập Tọa Độ Cột</h2>
+        
+        <div class="input-group">
+            <label>Tên cột / Mốc:</label>
+            <input type="text" id="inp-name" placeholder="Ví dụ: Cột 54">
+        </div>
+
+        <div class="input-group">
+            <label>Vĩ độ (Latitude):</label>
+            <input type="number" id="inp-lat" step="any" placeholder="Ví dụ: 10.762622">
+        </div>
+
+        <div class="input-group">
+            <label>Kinh độ (Longitude):</label>
+            <input type="number" id="inp-lng" step="any" placeholder="Ví dụ: 106.660172">
+        </div>
+
+        <button id="btn-start">Bắt Đầu Camera</button>
+        <button id="install-btn">Cài đặt ứng dụng</button>
+        
+        <p style="font-size: 12px; color: #777; margin-top: 20px;">Version 1.2</p>
     </div>
 
     <div id="camera-container">
@@ -147,8 +207,7 @@
 
     <div id="ui-layer">
         <div id="info-panel">
-            Đang đợi GPS...<br>
-            Vui lòng cấp quyền.
+            Đang đợi dữ liệu...
         </div>
 
         <div class="zoom-controls">
@@ -159,8 +218,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // Có thể import thêm Firestore hoặc Database nếu cần lấy tọa độ từ server
-        // import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo",
@@ -172,26 +229,43 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        console.log("Firebase initialized v1.0");
+        console.log("Firebase initialized v1.2");
     </script>
 
     <script>
-        // --- CẤU HÌNH & BIẾN TOÀN CỤC ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Failed', err));
+            });
+        }
+
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+
+            installBtn.addEventListener('click', () => {
+                installBtn.style.display = 'none';
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    deferredPrompt = null;
+                });
+            });
+        });
+    </script>
+
+    <script>
+        // --- CẤU HÌNH & BIẾN ---
         
-        // Tọa độ Cột điện (TARGET) - Ví dụ: Chợ Bến Thành (Bạn sẽ thay đổi hoặc lấy dynamic sau này)
-        // Hiện tại để test, code sẽ tự lấy vị trí của bạn + 0.001 độ để tạo cột điện ảo gần đó
-        let targetPos = {
-            lat: 0, 
-            lng: 0
-        };
-
-        // Tọa độ Người dùng
-        let userPos = {
-            lat: null,
-            lng: null
-        };
-
-        let deviceHeading = 0; // Hướng điện thoại (0 = Bắc)
+        let targetName = "Chưa có tên";
+        let targetPos = { lat: 0, lng: 0 }; // Sẽ được cập nhật từ input
+        let userPos = { lat: null, lng: null };
+        let deviceHeading = 0; 
         let currentZoom = 1.0;
         
         const video = document.getElementById('video');
@@ -199,10 +273,26 @@
         const ctx = canvas.getContext('2d');
         const infoPanel = document.getElementById('info-panel');
 
-        // --- KHỞI TẠO ỨNG DỤNG ---
-
+        // --- XỬ LÝ SỰ KIỆN NÚT BẮT ĐẦU ---
         document.getElementById('btn-start').addEventListener('click', async () => {
+            // 1. Lấy dữ liệu từ ô nhập
+            const nameInput = document.getElementById('inp-name').value;
+            const latInput = parseFloat(document.getElementById('inp-lat').value);
+            const lngInput = parseFloat(document.getElementById('inp-lng').value);
+
+            // 2. Kiểm tra dữ liệu
+            if (!nameInput || isNaN(latInput) || isNaN(lngInput)) {
+                alert("Vui lòng nhập đầy đủ Tên, Vĩ độ và Kinh độ!");
+                return;
+            }
+
+            // 3. Lưu dữ liệu
+            targetName = nameInput;
+            targetPos = { lat: latInput, lng: lngInput };
+
+            // 4. Ẩn màn hình nhập, bật camera
             document.getElementById('start-screen').style.display = 'none';
+            
             await startCamera();
             requestDeviceSensors();
             startGPS();
@@ -222,18 +312,18 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
-                        facingMode: 'environment', // Camera sau
+                        facingMode: 'environment', 
                         width: { ideal: 1920 },
                         height: { ideal: 1080 }
                     } 
                 });
                 video.srcObject = stream;
             } catch (err) {
-                alert("Không thể mở camera: " + err.message);
+                alert("Lỗi Camera: " + err.message);
             }
         }
 
-        // --- ZOOM CONTROL ---
+        // --- ZOOM ---
         document.getElementById('btn-zoom-in').addEventListener('click', () => {
             if (currentZoom < 3.0) currentZoom += 0.2;
             updateZoom();
@@ -245,25 +335,15 @@
         });
 
         function updateZoom() {
-            // Sử dụng CSS transform để zoom giả lập
             video.style.transform = `scale(${currentZoom})`;
         }
 
-        // --- GPS (GEOLOCATION) ---
+        // --- GPS ---
         function startGPS() {
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition((position) => {
                     userPos.lat = position.coords.latitude;
                     userPos.lng = position.coords.longitude;
-                    
-                    // NẾU CHƯA CÓ CỘT ĐIỆN, TẠO DỮ LIỆU GIẢ CÁCH NGƯỜI DÙNG MỘT CHÚT VỀ PHÍA BẮC
-                    // (Để bạn test mũi tên)
-                    if (targetPos.lat === 0) {
-                        targetPos.lat = userPos.lat + 0.0005; // Cách khoảng 50m về phía Bắc
-                        targetPos.lng = userPos.lng + 0.0005; // Cách khoảng 50m về phía Đông
-                        console.log("Đã tạo cột điện ảo tại:", targetPos);
-                    }
-
                     updateInfo();
                 }, (error) => {
                     infoPanel.innerText = "Lỗi GPS: " + error.message;
@@ -277,42 +357,34 @@
             }
         }
 
-        // --- LA BÀN (DEVICE ORIENTATION) ---
+        // --- CẢM BIẾN ---
         function requestDeviceSensors() {
-            // Xử lý riêng cho iOS 13+
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission()
                     .then(response => {
                         if (response === 'granted') {
                             window.addEventListener('deviceorientation', handleOrientation);
                         } else {
-                            alert("Cần quyền truy cập cảm biến để xác định phương hướng.");
+                            alert("Cần quyền la bàn để chỉ hướng.");
                         }
                     })
                     .catch(console.error);
             } else {
-                // Android và iOS đời cũ
                 window.addEventListener('deviceorientation', handleOrientation);
             }
         }
 
         function handleOrientation(event) {
             let heading = 0;
-
-            // iOS sử dụng webkitCompassHeading
             if (event.webkitCompassHeading) {
                 heading = event.webkitCompassHeading;
-            } 
-            // Android sử dụng alpha (nhưng cần tính toán bù trừ, ở đây lấy sơ bộ)
-            else if (event.alpha) {
+            } else if (event.alpha) {
                 heading = 360 - event.alpha; 
             }
-            
             deviceHeading = heading;
         }
 
-        // --- TÍNH TOÁN GÓC PHƯƠNG VỊ (BEARING) ---
-        // Tính góc từ Người dùng tới Cột điện so với hướng Bắc thật
+        // --- TÍNH TOÁN ---
         function calculateBearing(startLat, startLng, destLat, destLng) {
             const startLatRad = startLat * (Math.PI / 180);
             const startLngRad = startLng * (Math.PI / 180);
@@ -324,108 +396,88 @@
                       Math.sin(startLatRad) * Math.cos(destLatRad) * Math.cos(destLngRad - startLngRad);
             
             let brng = Math.atan2(y, x);
-            brng = brng * (180 / Math.PI); // Đổi ra độ
-            return (brng + 360) % 360; // Chuẩn hóa 0-360
+            brng = brng * (180 / Math.PI); 
+            return (brng + 360) % 360; 
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Bán kính trái đất (mét)
+            const p1 = lat1 * Math.PI/180;
+            const p2 = lat2 * Math.PI/180;
+            const dp = (lat2-lat1) * Math.PI/180;
+            const dl = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(dp/2) * Math.sin(dp/2) +
+                      Math.cos(p1) * Math.cos(p2) *
+                      Math.sin(dl/2) * Math.sin(dl/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c; // Khoảng cách theo mét
         }
 
         function updateInfo() {
-            if (userPos.lat) {
+            if (userPos.lat && targetPos.lat) {
+                const dist = calculateDistance(userPos.lat, userPos.lng, targetPos.lat, targetPos.lng);
+                
                 infoPanel.innerHTML = `
-                    <b>Vị trí của bạn:</b> ${userPos.lat.toFixed(6)}, ${userPos.lng.toFixed(6)}<br>
-                    <b>Mục tiêu (Cột):</b> ${targetPos.lat.toFixed(6)}, ${targetPos.lng.toFixed(6)}<br>
-                    <b>Hướng máy (Heading):</b> ${Math.round(deviceHeading)}°<br>
+                    <b>Mục tiêu:</b> ${targetName}<br>
+                    <b>Cách bạn:</b> ${Math.round(dist)}m<br>
+                    <b>Hướng máy:</b> ${Math.round(deviceHeading)}°<br>
                     <b>Zoom:</b> ${currentZoom.toFixed(1)}x
                 `;
             }
         }
 
-        // --- VÒNG LẶP VẼ (RENDER LOOP) ---
+        // --- RENDER LOOP ---
         function renderLoop() {
-            // 1. Xóa canvas cũ
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
 
-            // 2. Vẽ 2 đường màu xanh vuông góc (Crosshair)
-            ctx.strokeStyle = '#00FF00'; // Màu xanh lá
+            // Vẽ Crosshair
+            ctx.strokeStyle = '#00FF00'; 
             ctx.lineWidth = 2;
 
-            // Đường ngang
             ctx.beginPath();
             ctx.moveTo(0, centerY);
             ctx.lineTo(canvas.width, centerY);
             ctx.stroke();
 
-            // Đường dọc
             ctx.beginPath();
             ctx.moveTo(centerX, 0);
             ctx.lineTo(centerX, canvas.height);
             ctx.stroke();
 
-            // 3. Tính toán và vẽ mũi tên chỉ hướng
             if (userPos.lat && targetPos.lat) {
-                // Góc cần quay tới cột
                 const targetBearing = calculateBearing(userPos.lat, userPos.lng, targetPos.lat, targetPos.lng);
-                
-                // Độ lệch giữa hướng máy đang quay và hướng cột điện
-                // Ví dụ: Máy quay hướng 0 (Bắc), Cột ở hướng 90 (Đông) -> diff = 90 (Cột ở bên phải)
                 let angleDiff = targetBearing - deviceHeading;
                 
-                // Chuẩn hóa góc về khoảng -180 đến 180
                 if (angleDiff > 180) angleDiff -= 360;
                 if (angleDiff < -180) angleDiff += 360;
 
-                // Nếu độ lệch nhỏ (ví dụ < 5 độ), coi như đã trúng đích -> Đổi màu tâm
                 if (Math.abs(angleDiff) < 5) {
                     ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
                     ctx.beginPath();
                     ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
                     ctx.fill();
-                    // Vẽ text báo hiệu
                     ctx.fillStyle = '#fff';
                     ctx.font = '20px Arial';
                     ctx.textAlign = 'center';
                     ctx.fillText("CHÍNH XÁC!", centerX, centerY - 50);
                 } else {
-                    // Cột bị lệch -> Vẽ mũi tên từ giao điểm
                     drawGuideArrow(centerX, centerY, angleDiff);
                 }
             }
-
             requestAnimationFrame(renderLoop);
         }
 
         function drawGuideArrow(cx, cy, angleDiff) {
-            // angleDiff:
-            // > 0: Cột ở bên Phải
-            // < 0: Cột ở bên Trái
-            
-            // Độ dài mũi tên
             const arrowLength = Math.min(canvas.width, canvas.height) * 0.35; 
-
-            // Chuyển angleDiff thành góc vẽ trên màn hình 2D
-            // Trên màn hình: 0 độ là bên phải (trục X), 90 độ là dưới (trục Y) theo context arc
-            // Nhưng logic thực tế: 
-            // Nếu cột ở bên phải (+90 độ so với hướng nhìn) -> Mũi tên chỉ sang phải.
-            // Nếu cột ở bên trái (-90 độ) -> Mũi tên chỉ sang trái.
-            
-            // Chuyển độ lệch (độ) sang radian để tính toán tọa độ
-            // Lưu ý: -90 độ là đỉnh màn hình trong hệ tọa độ canvas (với sin/cos chuẩn)
-            // Ta xoay hệ tọa độ: angleDiff = 0 (trước mặt) -> Mũi tên chỉ lên trên (hoặc không vẽ)
-            // Ở đây ta đơn giản hóa: Vẽ mũi tên chỉ hướng cần xoay điện thoại.
-            
-            // Cách tiếp cận đơn giản: Chỉ vẽ hướng ngang (Horizontal guidance) 
-            // vì ta không có độ cao cột điện.
-            
             let radians = (angleDiff - 90) * (Math.PI / 180); 
-            // Trừ 90 để: nếu diff=0 (thẳng phía trước) -> góc = -90 (thẳng lên trên màn hình)
             
-            // Tính điểm đích của mũi tên
             const endX = cx + arrowLength * Math.cos(radians);
             const endY = cy + arrowLength * Math.sin(radians);
 
-            // Vẽ thân mũi tên
             ctx.beginPath();
             ctx.moveTo(cx, cy);
             ctx.lineTo(endX, endY);
@@ -433,7 +485,6 @@
             ctx.lineWidth = 5;
             ctx.stroke();
 
-            // Vẽ đầu mũi tên
             const headLen = 20; 
             const angleLine = Math.atan2(endY - cy, endX - cx);
             
@@ -445,7 +496,6 @@
             ctx.fillStyle = 'yellow';
             ctx.fill();
 
-            // Text chỉ độ lệch
             ctx.fillStyle = '#fff';
             ctx.font = '16px Arial';
             ctx.fillText(`Lệch: ${Math.round(angleDiff)}°`, endX, endY + 30);
