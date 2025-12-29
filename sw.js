@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ar-cot-dien-v1.4'; // Đã cập nhật version
+const CACHE_NAME = 'ar-cot-dien-v1.6'; // Version mới
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
