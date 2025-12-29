@@ -8,7 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <title>AR Cột Điện - v1.4</title>
+    <title>AR Cột Điện - v1.6</title>
     <style>
         body, html {
             margin: 0;
@@ -37,10 +37,10 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.2s ease-out;
+            /* Bỏ transition để phản hồi tức thì với cảm biến */
         }
 
-        /* --- MÀN HÌNH CHÀO (LANDING) --- */
+        /* --- MÀN HÌNH CHÀO --- */
         #landing-screen {
             position: absolute;
             top: 0;
@@ -73,20 +73,11 @@
             box-shadow: 0 4px 15px rgba(255,255,255,0.2);
             transition: transform 0.2s;
         }
-
         .main-btn:active { transform: scale(0.95); }
+        .btn-capture { background: linear-gradient(135deg, #ff9966, #ff5e62); color: white; }
+        .btn-find { background: linear-gradient(135deg, #56ab2f, #a8e063); color: white; }
 
-        .btn-capture {
-            background: linear-gradient(135deg, #ff9966, #ff5e62); /* Màu cam đỏ */
-            color: white;
-        }
-
-        .btn-find {
-            background: linear-gradient(135deg, #56ab2f, #a8e063); /* Màu xanh lá */
-            color: white;
-        }
-
-        /* --- MÀN HÌNH NHẬP LIỆU (CHO CHẾ ĐỘ TÌM) --- */
+        /* --- MÀN HÌNH NHẬP LIỆU --- */
         #input-screen {
             position: absolute;
             top: 0;
@@ -94,87 +85,27 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.95);
-            z-index: 9; /* Dưới landing nhưng trên camera */
-            display: none; /* Ẩn mặc định */
+            z-index: 9;
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
             pointer-events: auto;
+            overflow-y: auto;
         }
 
-        .input-group {
-            margin-bottom: 20px;
-            width: 80%;
-            max-width: 300px;
-        }
+        .input-group { margin-bottom: 15px; width: 80%; max-width: 300px; }
+        .input-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #a8e063; }
+        .input-group input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: #fff; font-size: 16px; box-sizing: border-box; }
+        
+        .btn-start-find { padding: 15px 40px; font-size: 18px; background: #a8e063; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-back { margin-top: 20px; background: none; border: none; color: #888; text-decoration: underline; cursor: pointer; }
 
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #a8e063;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #222;
-            color: #fff;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        .btn-start-find {
-            padding: 15px 40px;
-            font-size: 18px;
-            background: #a8e063;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .btn-back {
-            margin-top: 20px;
-            background: none;
-            border: none;
-            color: #888;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-
-        /* --- CÁC NÚT ĐIỀU KHIỂN TRONG CAMERA --- */
-        .zoom-controls {
-            position: absolute;
-            bottom: 50px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            pointer-events: auto;
-        }
-
-        .zoom-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: rgba(0, 255, 0, 0.3);
-            border: 2px solid #0f0;
-            color: #fff;
-            font-size: 24px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-        }
-
+        /* --- UI CONTROLS --- */
+        .zoom-controls { position: absolute; bottom: 50px; right: 20px; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; }
+        .zoom-btn { width: 50px; height: 50px; border-radius: 50%; background-color: rgba(0, 255, 0, 0.3); border: 2px solid #0f0; color: #fff; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(5px); }
+        
         #info-panel {
             position: absolute;
             top: 10px;
@@ -188,90 +119,43 @@
             line-height: 1.5;
         }
 
-        /* Nút Capture đỏ */
-        #capture-ui {
-            display: none;
-            position: absolute;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            pointer-events: auto;
-            text-align: center;
-        }
-
-        #btn-capture-now {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: rgba(255, 0, 0, 0.8);
-            border: 4px solid #fff;
-            color: white;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
-        }
-
-        #capture-result {
-            margin-bottom: 15px;
-            background: rgba(0,0,0,0.8);
-            color: #0f0;
-            padding: 10px;
-            border-radius: 5px;
-            display: none;
-            white-space: nowrap;
-        }
-
-        /* Nút quay lại màn hình chính */
-        #btn-home {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            cursor: pointer;
-            pointer-events: auto;
-            z-index: 100;
-        }
-
+        #capture-ui { display: none; position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); pointer-events: auto; text-align: center; }
+        #btn-capture-now { width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 0, 0, 0.8); border: 4px solid #fff; color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); }
+        #capture-result { margin-bottom: 15px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; border-radius: 5px; display: none; white-space: nowrap; }
+        #btn-home { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; pointer-events: auto; z-index: 100; }
     </style>
 </head>
 <body>
 
     <div id="landing-screen">
         <h2 style="color: white; margin-bottom: 40px;">CHỌN CHẾ ĐỘ</h2>
-        
-        <button class="main-btn btn-capture" onclick="selectMode('CAPTURE')">
-            📍 ĐỊNH VỊ
-        </button>
-
-        <button class="main-btn btn-find" onclick="selectMode('FIND')">
-            🔍 TÌM MỐC
-        </button>
-
-        <p style="color: #666; position: absolute; bottom: 20px; font-size: 12px;">Version 1.4</p>
+        <button class="main-btn btn-capture" onclick="selectMode('CAPTURE')">📍 ĐỊNH VỊ</button>
+        <button class="main-btn btn-find" onclick="selectMode('FIND')">🔍 TÌM MỐC (AR)</button>
+        <p style="color: #666; position: absolute; bottom: 20px; font-size: 12px;">Version 1.6 (Ground Level)</p>
     </div>
 
     <div id="input-screen">
-        <h2 style="margin-bottom: 30px;">Nhập Tọa Độ</h2>
+        <h2 style="margin-bottom: 20px;">Thông Số Mục Tiêu</h2>
         
         <div class="input-group">
             <label>Tên cột / Mốc:</label>
             <input type="text" id="inp-name" placeholder="Ví dụ: Cột 54">
         </div>
+        
         <div class="input-group">
             <label>Vĩ độ (Latitude):</label>
-            <input type="number" id="inp-lat" step="any" placeholder="Ví dụ: 10.762...">
+            <input type="number" id="inp-lat" step="any" placeholder="10.xxx">
         </div>
+        
         <div class="input-group">
             <label>Kinh độ (Longitude):</label>
-            <input type="number" id="inp-lng" step="any" placeholder="Ví dụ: 106.660...">
+            <input type="number" id="inp-lng" step="any" placeholder="106.xxx">
+        </div>
+
+        <div class="input-group" style="border-top: 1px solid #444; padding-top: 15px;">
+            <label style="color: #0ff;">Chiều cao máy (mét):</label>
+            <input type="number" id="inp-height" step="0.1" value="1.5" placeholder="Ví dụ: 1.5">
+            <small style="color:#777; font-size: 11px;">Tính từ mặt đất lên camera</small>
         </div>
 
         <button class="btn-start-find" onclick="startFindMode()">BẮT ĐẦU TÌM</button>
@@ -285,14 +169,11 @@
 
     <div id="ui-layer">
         <button id="btn-home" onclick="location.reload()">🏠 Menu</button>
-
-        <div id="info-panel">Chọn chế độ để bắt đầu...</div>
-
+        <div id="info-panel">Chọn chế độ...</div>
         <div class="zoom-controls">
             <div class="zoom-btn" id="btn-zoom-in">+</div>
             <div class="zoom-btn" id="btn-zoom-out">-</div>
         </div>
-
         <div id="capture-ui">
             <div id="capture-result">Đã sao chép!</div>
             <button id="btn-capture-now">LẤY<br>TỌA ĐỘ</button>
@@ -310,41 +191,42 @@
             appId: "1:670121705534:web:1027ad98550573ad37116f"
         };
         initializeApp(firebaseConfig);
-        console.log("Firebase initialized v1.4");
     </script>
 
     <script>
         // --- GLOBAL STATE ---
-        let APP_MODE = null; // 'FIND' or 'CAPTURE'
-        
+        let APP_MODE = null;
         let targetName = "Mục tiêu";
         let targetPos = { lat: 0, lng: 0 };
         let userPos = { lat: null, lng: null, acc: 0 };
-        let deviceHeading = 0; 
+        let phoneHeight = 1.5; // Chiều cao máy so với mặt đất (m)
+        
+        // ORIENTATION
+        let deviceYaw = 0;   // Phương vị (0-360)
+        let devicePitch = 90; // Độ nghiêng (90=Đứng, >90=Chúi xuống)
+        
         let currentZoom = 1.0;
         
+        // CAMERA SPECS (Ước lượng)
+        const H_FOV = 60; 
+        const V_FOV = 80;
+
         const video = document.getElementById('video');
         const canvas = document.getElementById('ar-canvas');
         const ctx = canvas.getContext('2d');
         const infoPanel = document.getElementById('info-panel');
         const captureUI = document.getElementById('capture-ui');
-        
-        // --- QUẢN LÝ MÀN HÌNH ---
 
+        // --- APP FLOW ---
         function selectMode(mode) {
             APP_MODE = mode;
-            const landing = document.getElementById('landing-screen');
-            const inputScreen = document.getElementById('input-screen');
-
             if (mode === 'CAPTURE') {
-                // Vào thẳng camera
-                landing.style.display = 'none';
+                document.getElementById('landing-screen').style.display = 'none';
                 captureUI.style.display = 'block';
                 initHardware();
             } else if (mode === 'FIND') {
-                // Vào màn hình nhập liệu
-                landing.style.display = 'none';
-                inputScreen.style.display = 'flex';
+                document.getElementById('landing-screen').style.display = 'none';
+                document.getElementById('input-screen').style.display = 'flex';
                 captureUI.style.display = 'none';
             }
         }
@@ -353,16 +235,14 @@
             const name = document.getElementById('inp-name').value;
             const lat = parseFloat(document.getElementById('inp-lat').value);
             const lng = parseFloat(document.getElementById('inp-lng').value);
+            const h = parseFloat(document.getElementById('inp-height').value);
 
-            if (!name || isNaN(lat) || isNaN(lng)) {
-                alert("Vui lòng nhập đầy đủ thông tin!");
-                return;
-            }
-
+            if (!name || isNaN(lat) || isNaN(lng)) return alert("Thiếu tọa độ!");
+            
             targetName = name;
             targetPos = { lat, lng };
+            phoneHeight = isNaN(h) ? 1.5 : h; // Nếu không nhập thì lấy 1.5m
 
-            // Ẩn input, hiện camera
             document.getElementById('input-screen').style.display = 'none';
             initHardware();
         }
@@ -375,38 +255,29 @@
             renderLoop();
         }
 
-        // --- HARDWARE FUNCTIONS ---
-
+        // --- HARDWARE ---
         async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment', width: { ideal: 1920 } } 
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } } });
                 video.srcObject = stream;
-            } catch (err) {
-                alert("Lỗi Camera: " + err.message);
-            }
+            } catch (err) { alert("Lỗi Camera: " + err.message); }
         }
 
         function startGPS() {
             if ("geolocation" in navigator) {
-                navigator.geolocation.watchPosition((position) => {
-                    userPos.lat = position.coords.latitude;
-                    userPos.lng = position.coords.longitude;
-                    userPos.acc = position.coords.accuracy;
+                navigator.geolocation.watchPosition(p => {
+                    userPos.lat = p.coords.latitude;
+                    userPos.lng = p.coords.longitude;
+                    userPos.acc = p.coords.accuracy;
                     updateInfo();
-                }, (error) => {
-                    infoPanel.innerText = "Đang tìm GPS... (Hãy ra ngoài trời)";
-                }, { enableHighAccuracy: true, maximumAge: 0 });
-            } else {
-                alert("Không hỗ trợ GPS");
+                }, e => infoPanel.innerText = "Chờ GPS...", { enableHighAccuracy: true });
             }
         }
 
         function requestDeviceSensors() {
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission()
-                    .then(r => r === 'granted' ? window.addEventListener('deviceorientation', handleOrientation) : alert("Cần quyền la bàn"))
+                    .then(r => r === 'granted' ? window.addEventListener('deviceorientation', handleOrientation) : alert("Cần quyền cảm biến"))
                     .catch(console.error);
             } else {
                 window.addEventListener('deviceorientation', handleOrientation);
@@ -414,153 +285,160 @@
         }
 
         function handleOrientation(event) {
-            if (event.webkitCompassHeading) deviceHeading = event.webkitCompassHeading;
-            else if (event.alpha) deviceHeading = 360 - event.alpha;
+            // Yaw
+            if (event.webkitCompassHeading) deviceYaw = event.webkitCompassHeading;
+            else if (event.alpha) deviceYaw = 360 - event.alpha;
+
+            // Pitch (Beta)
+            // Chuẩn hóa: 90 là đứng thẳng.
+            // Khi chúi đầu xuống đất, Beta tăng lên (ví dụ lên 135).
+            if (event.beta !== null) {
+                devicePitch = event.beta; 
+            }
         }
 
-        // --- NÚT BẤM ---
-        
-        // Nút Lấy tọa độ (Capture Mode)
+        // --- UTILS ---
         document.getElementById('btn-capture-now').addEventListener('click', () => {
             if (userPos.lat) {
                 const text = `${userPos.lat.toFixed(6)}, ${userPos.lng.toFixed(6)}`;
                 navigator.clipboard.writeText(text).then(() => {
-                    const resDiv = document.getElementById('capture-result');
-                    resDiv.innerText = "Đã copy: " + text;
-                    resDiv.style.display = 'block';
-                    setTimeout(() => resDiv.style.display = 'none', 3000);
-                }).catch(() => {
-                    alert("Tọa độ: " + text);
+                    const r = document.getElementById('capture-result');
+                    r.innerText = "Copy: " + text; r.style.display = 'block';
+                    setTimeout(() => r.style.display = 'none', 3000);
                 });
-            } else {
-                alert("Đang đợi tín hiệu GPS...");
-            }
+            } else alert("Chưa có GPS!");
         });
 
-        // Zoom
-        document.getElementById('btn-zoom-in').addEventListener('click', () => {
-            if (currentZoom < 3.0) currentZoom += 0.2;
-            video.style.transform = `scale(${currentZoom})`;
-        });
-        document.getElementById('btn-zoom-out').addEventListener('click', () => {
-            if (currentZoom > 1.0) currentZoom -= 0.2;
-            video.style.transform = `scale(${currentZoom})`;
-        });
-
-        // --- LOGIC TÍNH TOÁN & VẼ ---
+        document.getElementById('btn-zoom-in').addEventListener('click', () => { if (currentZoom < 3) currentZoom+=0.2; updateZoom(); });
+        document.getElementById('btn-zoom-out').addEventListener('click', () => { if (currentZoom > 1) currentZoom-=0.2; updateZoom(); });
+        function updateZoom() { video.style.transform = `scale(${currentZoom})`; }
 
         window.addEventListener('resize', resizeCanvas);
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 
+        // --- MATH LOGIC ---
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371e3;
-            const p1 = lat1 * Math.PI/180;
-            const p2 = lat2 * Math.PI/180;
-            const dp = (lat2-lat1) * Math.PI/180;
-            const dl = (lon2-lon1) * Math.PI/180;
-            const a = Math.sin(dp/2) * Math.sin(dp/2) +
-                      Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
+            const p1 = lat1 * Math.PI/180; const p2 = lat2 * Math.PI/180;
+            const dp = (lat2-lat1) * Math.PI/180; const dl = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(dp/2)**2 + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
         function calculateBearing(startLat, startLng, destLat, destLng) {
-            const startLatRad = startLat * (Math.PI / 180);
-            const startLngRad = startLng * (Math.PI / 180);
-            const destLatRad = destLat * (Math.PI / 180);
-            const destLngRad = destLng * (Math.PI / 180);
-            const y = Math.sin(destLngRad - startLngRad) * Math.cos(destLatRad);
-            const x = Math.cos(startLatRad) * Math.sin(destLatRad) -
-                      Math.sin(startLatRad) * Math.cos(destLatRad) * Math.cos(destLngRad - startLngRad);
-            let brng = Math.atan2(y, x) * (180 / Math.PI);
-            return (brng + 360) % 360;
+            const y = Math.sin((destLng-startLng)*Math.PI/180) * Math.cos(destLat*Math.PI/180);
+            const x = Math.cos(startLat*Math.PI/180)*Math.sin(destLat*Math.PI/180) -
+                      Math.sin(startLat*Math.PI/180)*Math.cos(destLat*Math.PI/180)*Math.cos((destLng-startLng)*Math.PI/180);
+            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
         }
 
         function updateInfo() {
             if (!userPos.lat) return;
-
             if (APP_MODE === 'FIND') {
                 const dist = calculateDistance(userPos.lat, userPos.lng, targetPos.lat, targetPos.lng);
                 infoPanel.innerHTML = `
-                    <b style="color:#a8e063">CHẾ ĐỘ TÌM MỐC</b><br>
+                    <b style="color:#a8e063">TÌM CỘT (AR)</b><br>
                     Mục tiêu: ${targetName}<br>
                     Khoảng cách: ${Math.round(dist)}m<br>
-                    Hướng: ${Math.round(deviceHeading)}°
+                    Cao máy: ${phoneHeight}m
                 `;
             } else {
-                infoPanel.innerHTML = `
-                    <b style="color:#ff9966">CHẾ ĐỘ ĐỊNH VỊ</b><br>
-                    Lat: ${userPos.lat.toFixed(6)}<br>
-                    Lng: ${userPos.lng.toFixed(6)}<br>
-                    Độ chính xác: +/- ${Math.round(userPos.acc)}m
-                `;
+                infoPanel.innerHTML = `<b style="color:#ff9966">ĐỊNH VỊ GPS</b><br>Lat: ${userPos.lat.toFixed(6)}<br>Lng: ${userPos.lng.toFixed(6)}<br>+/- ${Math.round(userPos.acc)}m`;
             }
         }
 
+        // --- RENDER & PROJECTION ---
         function renderLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
-            // 1. Luôn vẽ Tâm ngắm
+            // Crosshair
             const color = (APP_MODE === 'FIND') ? '#a8e063' : '#ff9966';
-            ctx.strokeStyle = color; 
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(cx - 50, cy); ctx.lineTo(cx + 50, cy); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(cx, cy - 50); ctx.lineTo(cx, cy + 50); ctx.stroke();
-            ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 2*Math.PI); ctx.stroke();
+            ctx.strokeStyle = color; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(cx-30, cy); ctx.lineTo(cx+30, cy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, cy-30); ctx.lineTo(cx, cy+30); ctx.stroke();
 
-            // 2. Chỉ vẽ mũi tên dẫn đường nếu ở Mode FIND
-            if (APP_MODE === 'FIND' && userPos.lat && targetPos.lat) {
+            if (APP_MODE === 'FIND' && userPos.lat) {
+                const dist = calculateDistance(userPos.lat, userPos.lng, targetPos.lat, targetPos.lng);
+                
+                // 1. GÓC NGANG (YAW)
                 const targetBearing = calculateBearing(userPos.lat, userPos.lng, targetPos.lat, targetPos.lng);
-                let angleDiff = targetBearing - deviceHeading;
-                if (angleDiff > 180) angleDiff -= 360;
-                if (angleDiff < -180) angleDiff += 360;
+                let yawDiff = targetBearing - deviceYaw;
+                if (yawDiff > 180) yawDiff -= 360;
+                if (yawDiff < -180) yawDiff += 360;
 
-                if (Math.abs(angleDiff) < 5) {
-                    // Đã trúng hướng
-                    ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
-                    ctx.beginPath(); ctx.arc(cx, cy, 30, 0, 2 * Math.PI); ctx.fill();
-                    ctx.fillStyle = '#fff'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center';
-                    ctx.fillText("ĐÚNG HƯỚNG", cx, cy - 60);
+                // 2. GÓC DỌC (PITCH) - QUAN TRỌNG
+                // Tam giác vuông: Cao = phoneHeight, Đáy = dist
+                // Góc cần chúi xuống (so với phương ngang) = arctan(Height / Distance)
+                // Đổi ra độ
+                let angleOfDepression = Math.atan(phoneHeight / dist) * (180 / Math.PI);
+                
+                // Thiết bị: 90 độ là đứng thẳng (nhìn ngang). 
+                // Càng chúi xuống đất thì góc càng tăng (> 90).
+                // => Góc máy lý tưởng (Target Pitch) = 90 + góc chúi
+                let targetPitch = 90 + angleOfDepression;
+
+                // Độ lệch dọc = Góc lý tưởng - Góc máy hiện tại
+                // Nếu máy đang đứng (90), cần chúi (ví dụ 100) -> diff = 10 (Mục tiêu ở dưới)
+                let pitchDiff = targetPitch - devicePitch;
+
+                // 3. Tọa độ màn hình
+                const pxPerDegH = canvas.width / H_FOV;
+                const pxPerDegV = canvas.height / V_FOV;
+
+                const targetX = cx + (yawDiff * pxPerDegH);
+                
+                // pitchDiff > 0: Cần chúi thêm -> Mục tiêu đang ở phía dưới màn hình -> Y tăng
+                // pitchDiff < 0: Đang chúi quá -> Mục tiêu đang ở phía trên màn hình -> Y giảm
+                const targetY = cy + (pitchDiff * pxPerDegV); 
+
+                const inView = (targetX > 0 && targetX < canvas.width && targetY > 0 && targetY < canvas.height);
+
+                if (inView && Math.abs(yawDiff) < 15) { // Chỉ hiện khi góc ngang gần đúng
+                    // VẼ MỐC
+                    ctx.fillStyle = 'rgba(0, 255, 0, 0.6)';
+                    ctx.beginPath(); ctx.arc(targetX, targetY, 15, 0, 2*Math.PI); ctx.fill();
+                    
+                    // Vẽ que cắm xuống đất
+                    ctx.beginPath(); ctx.moveTo(targetX, targetY); ctx.lineTo(targetX, targetY - 40);
+                    ctx.strokeStyle = '#0f0'; ctx.stroke();
+
+                    // Text
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center';
+                    ctx.fillText(targetName, targetX, targetY - 50);
+                    ctx.font = '12px Arial';
+                    ctx.fillText(`${Math.round(dist)}m`, targetX, targetY + 30);
                 } else {
-                    drawGuideArrow(cx, cy, angleDiff);
+                    // VẼ MŨI TÊN CHỈ DẪN
+                    draw3DArrow(cx, cy, targetX, targetY);
                 }
             }
-
             requestAnimationFrame(renderLoop);
         }
 
-        function drawGuideArrow(cx, cy, angleDiff) {
-            const arrowLength = Math.min(canvas.width, canvas.height) * 0.35; 
-            let radians = (angleDiff - 90) * (Math.PI / 180); 
-            const endX = cx + arrowLength * Math.cos(radians);
-            const endY = cy + arrowLength * Math.sin(radians);
+        function draw3DArrow(cx, cy, targetX, targetY) {
+            const angle = Math.atan2(targetY - cy, targetX - cx);
+            const radius = Math.min(canvas.width, canvas.height) * 0.35; 
 
-            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(endX, endY);
-            ctx.strokeStyle = '#a8e063'; ctx.lineWidth = 5; ctx.stroke();
+            const arrowX = cx + radius * Math.cos(angle);
+            const arrowY = cy + radius * Math.sin(angle);
 
-            const headLen = 20; 
-            const angleLine = Math.atan2(endY - cy, endX - cx);
-            ctx.beginPath();
-            ctx.moveTo(endX, endY);
-            ctx.lineTo(endX - headLen * Math.cos(angleLine - Math.PI / 6), endY - headLen * Math.sin(angleLine - Math.PI / 6));
-            ctx.lineTo(endX - headLen * Math.cos(angleLine + Math.PI / 6), endY - headLen * Math.sin(angleLine + Math.PI / 6));
-            ctx.lineTo(endX, endY);
-            ctx.fillStyle = '#a8e063'; ctx.fill();
+            ctx.translate(arrowX, arrowY);
+            ctx.rotate(angle);
             
-            // Text độ lệch
-            ctx.fillStyle = '#fff'; ctx.font = '16px Arial'; ctx.textAlign = 'left';
-            ctx.fillText(`${Math.round(angleDiff)}°`, endX + 10, endY);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-20, -12);
+            ctx.lineTo(-20, 12);
+            ctx.fillStyle = '#a8e063';
+            ctx.fill();
+            
+            ctx.rotate(-angle);
+            ctx.translate(-arrowX, -arrowY);
         }
 
-        // PWA Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').catch(console.error);
-        }
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
     </script>
 </body>
 </html>
